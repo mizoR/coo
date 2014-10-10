@@ -35,7 +35,6 @@ func main() {
 	cmd := ssh.NewCommand()
 	cmd.Host = args[0]
 	cmd.Command = args[1:]
-	cmd.Run()
 
 	if err = cmd.Run(); err != nil {
 		return
