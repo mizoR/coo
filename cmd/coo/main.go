@@ -5,11 +5,11 @@ import (
 	"os"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/mizoR/coma/ssh"
+	"github.com/mizoR/coo/ssh"
 )
 
 func showHelp() {
-	os.Stderr.WriteString("Usage: coma host [command]\n")
+	os.Stderr.WriteString("Usage: coo host [command]\n")
 }
 
 func main() {
