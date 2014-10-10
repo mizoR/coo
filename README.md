@@ -1,5 +1,7 @@
 # coo
 
+Manage the transcripts of ssh
+
 ## Installation and Usage
 
 ```sh
