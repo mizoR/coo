@@ -1,9 +1,12 @@
 package ssh
 
 import (
+	"io"
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/mizoR/coo/tee"
 )
 
 type Command struct {
@@ -44,28 +47,48 @@ func (cmd Command) execute() error {
 	var err error
 	args := append([]string{cmd.Host}, cmd.Command...)
 	ssh := exec.Command("/usr/bin/ssh", args...)
-	tee := exec.Command("coo-tee", cmd.Logfile, "-t", "-a")
+	tee := tee.NewTee(cmd.Logfile, true, true)
 
 	ssh.Stdin = os.Stdin
 	ssh.Stderr = os.Stderr
-	tee.Stdout = os.Stdout
 
-	if tee.Stdin, err = ssh.StdoutPipe(); err != nil {
+	var reader io.Reader
+	reader, err = ssh.StdoutPipe()
+	if err != nil {
 		return err
 	}
 
-	if err = ssh.Start(); err != nil {
-		return err
-	}
+	sshCh := make(chan error)
+	go func() {
+		sshCh <- ssh.Run()
+	}()
 
-	if err = tee.Start(); err != nil {
-		return err
-	}
+	teeCh := tee.WriteBackground(reader)
 
-	if err = ssh.Wait(); err != nil {
-		return err
-	}
+	return wait((<-chan error)(sshCh), teeCh)
 
+}
+
+func wait(sshCh, teeCh <-chan error) error {
+	var sshDone, teeDone bool
+	for {
+		if sshDone && teeDone {
+			break
+		}
+		select {
+		case err := <-sshCh:
+			if err != nil {
+				return err
+			}
+			sshDone = true
+		case err := <-teeCh:
+			if err != nil {
+				return err
+			}
+			teeDone = true
+		}
+
+	}
 	return nil
 }
 
