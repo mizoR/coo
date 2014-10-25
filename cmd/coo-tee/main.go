@@ -49,24 +49,8 @@ func main() {
 		return
 	}
 
-	cmd := tee.NewCommand()
-	cmd.OptTimestamp = opts.OptTimestamp
-
-	perm := (os.O_WRONLY | os.O_CREATE)
-	if opts.OptAppend {
-		perm = (perm | os.O_APPEND)
-	}
-
-	for _, file := range files {
-		var f *os.File
-		if f, err = os.OpenFile(file, perm, 0644); err != nil {
-			return
-		}
-		defer f.Close()
-		cmd.Files = append(cmd.Files, f)
-	}
-
-	if err = cmd.Run(); err != nil {
+	tee := tee.NewTee(files[0], opts.OptAppend, opts.OptTimestamp)
+	if err := tee.Write(os.Stdin); err != nil {
 		return
 	}
 
